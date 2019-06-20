@@ -183,8 +183,8 @@ class App extends React.Component {
           <img ref={this.previewImgRef} alt="Preview" />
           <input type="file" onChange={this.handleFile.bind(this)} />
           <input type="color" defaultValue={color} onChange={this.handleColorChange.bind(this)} />
-          <button onClick={this.handleScaleChange.bind(this, 0.05)}>+</button>
           <button onClick={this.handleScaleChange.bind(this, -0.05)}>-</button>
+          <button onClick={this.handleScaleChange.bind(this, 0.05)}>+</button>
           <br />
         </div>
         <div className="col col-right">
