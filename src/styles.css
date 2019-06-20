@@ -10,6 +10,12 @@
   bottom: 0;
 }
 
+button {
+  padding: 0.5em 1em;
+    margin-left: 0.5em;
+  margin-top: 0.2em;
+}
+
 .col {
   padding: 1rem;
   background: #fff;

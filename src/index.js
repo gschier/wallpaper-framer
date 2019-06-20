@@ -1,22 +1,22 @@
-import React from "react";
-import ReactDOM from "react-dom";
-import frameImgSrc from "./screenshot-frame.png";
-import frameImgMaskSrc from "./screenshot-frame-mask.png";
-import Vibrant from "node-vibrant";
+import React from 'react';
+import ReactDOM from 'react-dom';
+import frameImgSrc from './screenshot-frame.png';
+import frameImgMaskSrc from './screenshot-frame-mask.png';
+import Vibrant from 'node-vibrant';
 
-import "./styles.css";
+import './styles.css';
 
-const STATE_KEY = "save.1";
+const STATE_KEY = 'save.1';
 
 class App extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      imgData: "",
+      imgData: '',
       width: 0,
       height: 0,
-      scale: 1,
-      color: "#444444",
+      scale: 0.4,
+      color: '#444444',
     };
     this.previewImgRef = React.createRef();
     this.canvasRef = React.createRef();
@@ -29,14 +29,13 @@ class App extends React.Component {
     const file = e.currentTarget.files[0]; //sames as here
     const reader = new FileReader();
 
-    reader.onloadend = () => {
-      this.setState({ imagData: reader.result });
+    reader.onloadend = async () => {
+      this.setState({ imgData: reader.result });
+      await this.detectColor();
     };
 
     if (file) {
       reader.readAsDataURL(file); //reads the data as a URL
-    } else {
-      this.previewImgRef.current.src = "";
     }
   }
 
@@ -44,55 +43,74 @@ class App extends React.Component {
     this.setState({ color: e.currentTarget.value });
   }
 
-  handleScaleChange(v, e) {
-    console.log("SCALE", v);
+  async detectColor() {
+    const color = await this.getPaletteColor();
+    this.setState({ color });
+  }
+
+  handleScaleChange(v) {
     this.setState(state => ({
-      scale: typeof state.scale === "number" ? state.scale + v : 1 + v,
+      scale: typeof state.scale === 'number' ? state.scale + v : 1 + v,
     }));
   }
 
-  componentDidMount() {
-    // initialize the canvas
-    this.ctx = this.canvasRef.current.getContext("2d");
+  resize = async () => {
+    // Size canvas
     const rect = this.canvasRef.current.getBoundingClientRect();
-    this.setState({ width: rect.width, height: rect.height });
-
-    // Load state from localstorage
-    let oldState = {};
-    try {
-      oldState = JSON.parse(localStorage.getItem(STATE_KEY));
-    } catch (e) {}
 
     this.setState({
-      ...oldState,
       width: rect.width * 2,
       height: rect.width * 2,
     });
 
+    await this.drawImage();
+  };
+
+  componentDidMount() {
+    // initialize the canvas
+    this.ctx = this.canvasRef.current.getContext('2d');
+
+    // Load state from localstorage
+    try {
+      const oldState = JSON.parse(localStorage.getItem(STATE_KEY));
+      console.log('Loaded old state', oldState);
+      this.setState(oldState);
+    } catch (e) {
+    }
+
+    window.addEventListener('resize', this.resize);
+
     // Wait for images to load first
     setTimeout(async () => {
+      await this.resize();
       await this.drawImage();
     }, 400);
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener('resize', this.resize);
   }
 
   async getPaletteColor() {
     var v = new Vibrant(this.previewImgRef.current, {});
     const palette = await v.getPalette();
-    console.log("palette", palette);
     return palette.Vibrant.hex;
   }
 
   async componentDidUpdate() {
-    this.previewImgRef.current.src = this.state.imagData;
+    this.previewImgRef.current.src = this.state.imgData;
     window.localStorage.setItem(STATE_KEY, JSON.stringify(this.state));
     this.drawImage();
   }
 
   async drawImage() {
-    const { width, height, scale } = this.state;
-    const color = await this.getPaletteColor();
+    const { width, height, scale, imgData, color } = this.state;
 
-    console.log("Draw Image", { width, height, color, scale });
+    if (!imgData) {
+      return;
+    }
+
+    console.log('Draw Image', { width, height, color, scale });
 
     const ctx = this.ctx;
 
@@ -111,7 +129,7 @@ class App extends React.Component {
     );
 
     // Draw the uploaded image only over the masked pixels
-    ctx.globalCompositeOperation = "source-in";
+    ctx.globalCompositeOperation = 'source-in';
     const imgRect = this.previewImgRef.current.getBoundingClientRect();
     const imgAspect = imgRect.width / imgRect.height;
     const scaledWidth = width * scale;
@@ -122,7 +140,7 @@ class App extends React.Component {
     ctx.drawImage(this.previewImgRef.current, x, y, scaledWidth, scaledHeight);
 
     // Draw the rest of the stuff behind it
-    ctx.globalCompositeOperation = "destination-over";
+    ctx.globalCompositeOperation = 'destination-over';
     ctx.drawImage(this.frameImgRef.current, 10, 10, width - 10 * 2, height - 10 * 2);
 
     // Draw background behind it
@@ -134,21 +152,21 @@ class App extends React.Component {
 
   handleDownload() {
     /// create an "off-screen" anchor tag
-    const lnk = document.createElement("a");
+    const lnk = document.createElement('a');
 
     /// the key here is to set the download attribute of the a tag
-    lnk.download = "wallpaper.png";
+    lnk.download = 'wallpaper.png';
 
     /// convert canvas content to data-uri for link. When download
     /// attribute is set the content pointed to by link will be
     /// pushed as "download" in HTML5 capable browsers
-    lnk.href = this.canvasRef.current.toDataURL("image/png;base64");
+    lnk.href = this.canvasRef.current.toDataURL('image/png;base64');
 
     /// create a "fake" click-event to trigger the download
     if (document.createEvent) {
-      const e = document.createEvent("MouseEvents");
+      const e = document.createEvent('MouseEvents');
       e.initMouseEvent(
-        "click",
+        'click',
         true,
         true,
         window,
@@ -167,32 +185,32 @@ class App extends React.Component {
 
       lnk.dispatchEvent(e);
     } else if (lnk.fireEvent) {
-      lnk.fireEvent("onclick");
+      lnk.fireEvent('onclick');
     }
   }
 
   render() {
-    const { width, height, color } = this.state;
+    const { width, height, color, imgData } = this.state;
     return (
       <div className="app">
         <div className="hidden-assets">
-          <img src={frameImgSrc} alt="Screenshot Frame" ref={this.frameImgRef} />
-          <img src={frameImgMaskSrc} alt="Screenshot Frame Mask" ref={this.frameImgMaskRef} />
+          <img src={frameImgSrc} alt="Screenshot Frame" ref={this.frameImgRef}/>
+          <img src={frameImgMaskSrc} alt="Screenshot Frame Mask" ref={this.frameImgMaskRef}/>
         </div>
         <div className="col col-left">
-          <img ref={this.previewImgRef} alt="Preview" />
-          <input type="file" onChange={this.handleFile.bind(this)} />
-          <input type="color" defaultValue={color} onChange={this.handleColorChange.bind(this)} />
+          <img ref={this.previewImgRef} alt="Preview" src={imgData}/>
+          <input type="file" onChange={this.handleFile.bind(this)}/>
+          <input type="color" value={color} onChange={this.handleColorChange.bind(this)}/>
           <button onClick={this.handleScaleChange.bind(this, -0.05)}>-</button>
           <button onClick={this.handleScaleChange.bind(this, 0.05)}>+</button>
-          <br />
+          <br/>
         </div>
         <div className="col col-right">
           <canvas
             ref={this.canvasRef}
             width={width}
             height={height}
-            style={width > 0 ? { width: `${width / 2}px`, height: `${height / 2}px` } : {}}
+            style={height > 0 ? { width: '100%', height: `${height / 2}px` } : {}}
           />
           <button onClick={this.handleDownload.bind(this)}>Download</button>
         </div>
@@ -201,5 +219,5 @@ class App extends React.Component {
   }
 }
 
-const rootElement = document.getElementById("root");
-ReactDOM.render(<App />, rootElement);
+const rootElement = document.getElementById('root');
+ReactDOM.render(<App/>, rootElement);
