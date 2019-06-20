@@ -1,0 +1,41 @@
+.app {
+  font-family: sans-serif;
+  text-align: center;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+}
+
+.col {
+  padding: 1rem;
+  background: #fff;
+}
+
+.hidden-assets {
+  display: none;
+}
+
+.col-left {
+  text-align: left;
+}
+
+.col-left img {
+  max-width: 100%;
+  max-height: 70vh;
+  margin: auto;
+  display: block;
+  margin-bottom: 2em;
+}
+
+.col-right {
+}
+
+.col-right canvas {
+  width: 100%;
+  background-color: transparent;
+  display: block;
+}
